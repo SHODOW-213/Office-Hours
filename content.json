@@ -1,0 +1,24 @@
+{
+  "siteName": "Office Hours",
+  "tagline": "Songs and videos, after work.",
+  "items": [
+    {
+      "type": "song",
+      "title": "Sample tone A",
+      "artist": "Test file, delete me",
+      "file": "media/songs/sample-a.mp3"
+    },
+    {
+      "type": "song",
+      "title": "Sample tone B",
+      "artist": "Test file, delete me",
+      "file": "media/songs/sample-b.mp3"
+    },
+    {
+      "type": "video",
+      "title": "Sample test video",
+      "artist": "Test file, delete me",
+      "file": "media/videos/sample-video.mp4"
+    }
+  ]
+}

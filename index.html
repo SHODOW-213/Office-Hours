@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Office Hours</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Office Hours is a small site for songs and videos. Pick a track, press play.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Public+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Concept: a door sign. Cool paper background, navy ink, one signal red that marks what is playing now. Library reads like a timetable: one row per track, a play button at the left, and a fixed player bar at the bottom. */
+:root{
+  --bg:#ECEFF5; --surface:#FFFFFF; --ink:#14213D; --muted:#55627E; --line:#CBD3E3;
+  --navy:#14213D; --navy-ink:#F2F5FB; --live:#D62C27; --danger:#B3261E;
+  --f-display:'Archivo','Arial Black',Arial,sans-serif;
+  --f-body:'Public Sans',Arial,sans-serif;
+  --f-mono:'IBM Plex Mono','Courier New',monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1424; --surface:#172039; --ink:#E9EEF9; --muted:#9AA7C4; --line:#27324F;
+    --navy:#E9EEF9; --navy-ink:#0E1424; --live:#FF6B63; --danger:#FF8A80; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1424; --surface:#172039; --ink:#E9EEF9; --muted:#9AA7C4; --line:#27324F;
+  --navy:#E9EEF9; --navy-ink:#0E1424; --live:#FF6B63; --danger:#FF8A80; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.05;letter-spacing:-0.01em}
+p{margin:0}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--live);outline-offset:3px}
+.wrap{max-width:900px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.page{padding-bottom:40px}
+.page.has-player{padding-bottom:150px}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:22px}
+.logo{font-family:var(--f-display);font-weight:800;font-size:24px;letter-spacing:-0.01em}
+.sign{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;border:2px solid var(--ink);border-radius:6px;padding:4px 10px}
+.sign i{width:9px;height:9px;border-radius:50%;background:var(--live)}
+
+.hero{padding-block:24px 28px}
+.hero h1{font-size:clamp(44px,9vw,88px);font-weight:800}
+.hero p{margin-top:14px;font-size:20px;color:var(--muted);max-width:30em}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-block:14px;border-top:2px solid var(--ink)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{min-height:44px;padding:8px 18px;border-radius:999px;border:1.5px solid var(--line);background:transparent;cursor:pointer;font-weight:700}
+.tab[aria-pressed="true"]{background:var(--navy);color:var(--navy-ink);border-color:var(--navy)}
+.search{min-height:44px;min-width:0;flex:1 1 200px;max-width:320px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface)}
+.count{padding-block:10px 12px;font-family:var(--f-mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* video stage */
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:20px;display:grid;gap:12px}
+.stage-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.stage-head h2{font-size:22px}
+.stage video,.stage iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#000;max-width:100%}
+.close{min-height:44px;padding:8px 16px;border-radius:10px;border:1.5px solid var(--ink);background:transparent;cursor:pointer;font-weight:700}
+
+/* list */
+.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.play{width:48px;height:48px;border-radius:50%;border:2px solid var(--ink);background:transparent;cursor:pointer;display:grid;place-items:center;padding:0}
+.play svg{width:20px;height:20px;fill:var(--ink)}
+.row.playing .play{background:var(--live);border-color:var(--live)}
+.row.playing .play svg{fill:#fff}
+.meta{min-width:0}
+.title{font-weight:700;font-size:18px;overflow-wrap:anywhere}
+.row.playing .title{color:var(--live)}
+.artist{color:var(--muted);font-size:15px;overflow-wrap:anywhere}
+.kind{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;border:1.5px solid var(--line);border-radius:6px;padding:3px 8px;color:var(--muted)}
+
+.note{margin-top:20px;padding:20px;border:1.5px dashed var(--line);border-radius:12px;color:var(--muted)}
+.note.err{border-color:var(--danger);color:var(--ink)}
+.note strong{color:var(--ink)}
+.note code{font-family:var(--f-mono);font-size:14px;background:var(--surface);padding:2px 6px;border-radius:4px}
+
+/* player bar */
+.player{position:fixed;left:0;right:0;bottom:0;background:var(--navy);color:var(--navy-ink);padding-top:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:20}
+.player-in{max-width:900px;margin-inline:auto;display:grid;gap:8px}
+.now{display:flex;align-items:center;gap:10px;min-width:0}
+.now i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--live)}
+.now b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.now span{opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctrl{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.btns{display:flex;gap:8px;align-items:center}
+.pb{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--navy-ink);background:transparent;color:var(--navy-ink);cursor:pointer;display:grid;place-items:center;padding:0}
+.pb svg{width:20px;height:20px;fill:var(--navy-ink)}
+.pb.main{background:var(--navy-ink)}
+.pb.main svg{fill:var(--navy)}
+.pb[aria-pressed="true"]{outline:2px solid var(--live);outline-offset:2px}
+.seek{width:100%;accent-color:var(--live);min-width:0}
+.time{font-family:var(--f-mono);font-size:13px;opacity:.85;white-space:nowrap}
+
+footer{padding-block:32px;color:var(--muted);font-size:14px}
+
+@media (max-width:520px){
+  .kind{display:none}
+  .row{grid-template-columns:48px minmax(0,1fr);gap:12px}
+  .ctrl{grid-template-columns:1fr}
+  .time{justify-self:end}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="page" id="page">
+  <div class="wrap">
+    <header class="top">
+      <span class="logo">Office Hours</span>
+      <span class="sign"><i aria-hidden="true"></i>Open</span>
+    </header>
+
+    <section class="hero">
+      <h1 id="siteName">Office Hours</h1>
+      <p id="tagline">Songs and videos, after work.</p>
+    </section>
+
+    <section class="controls" aria-label="Filter the library">
+      <div class="tabs" role="group" aria-label="Type">
+        <button class="tab" type="button" data-f="all" aria-pressed="true">All</button>
+        <button class="tab" type="button" data-f="song" aria-pressed="false">Songs</button>
+        <button class="tab" type="button" data-f="video" aria-pressed="false">Videos</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="Search title or artist" aria-label="Search title or artist">
+    </section>
+
+    <p class="count" id="count" aria-live="polite"></p>
+
+    <section class="stage" id="stage" hidden>
+      <div class="stage-head"><h2 id="stageTitle">Video</h2><button class="close" type="button" id="stageClose">Close video</button></div>
+      <div id="stageBody"></div>
+    </section>
+
+    <ol class="list" id="list"></ol>
+    <div id="msg"></div>
+
+    <footer>Office Hours</footer>
+  </div>
+</div>
+
+<div class="player" id="player" hidden>
+  <div class="player-in">
+    <div class="now"><i aria-hidden="true"></i><b id="nowTitle">Nothing playing</b><span id="nowArtist"></span></div>
+    <div class="ctrl">
+      <div class="btns">
+        <button class="pb" type="button" id="shuf" aria-label="Shuffle" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h4l8 12h6v-2l3 3-3 3v-2h-7L6 8H3V6zm14 0h4V4l3 3-3 3V8h-3.5l-2.4 3.6-1.7-2.5L17 6zM3 16h3.5l2.2-3.3 1.7 2.5L8 18H3v-2z"/></svg></button>
+        <button class="pb" type="button" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h2v12H6zM20 6v12L9.5 12z"/></svg></button>
+        <button class="pb main" type="button" id="toggle" aria-label="Play"><svg id="toggleIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="pb" type="button" id="next" aria-label="Next"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 6h2v12h-2zM4 6l10.5 6L4 18z"/></svg></button>
+      </div>
+      <input class="seek" id="seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek">
+      <span class="time" id="time">0:00 / 0:00</span>
+    </div>
+  </div>
+  <audio id="audio" preload="metadata"></audio>
+</div>
+
+<script>
+(function(){
+  var PLAY = 'M8 5v14l11-7z', PAUSE = 'M6 5h4v14H6zM14 5h4v14h-4z';
+  var items = [], filter = 'all', query = '', current = -1, shuffle = false;
+  var $ = function(id){ return document.getElementById(id); };
+  var audio = $('audio');
+
+  function el(tag, cls, text){ var n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; }
+  function fmt(s){ if(!isFinite(s)) s = 0; s = Math.floor(s); var m = Math.floor(s/60), r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+  function icon(path){ return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg>'; }
+
+  function visible(){
+    var q = query.trim().toLowerCase();
+    var out = [];
+    items.forEach(function(it, i){
+      if(filter !== 'all' && it.type !== filter) return;
+      var hay = ((it.title || '') + ' ' + (it.artist || '')).toLowerCase();
+      if(q && hay.indexOf(q) === -1) return;
+      out.push(i);
+    });
+    return out;
+  }
+
+  function render(){
+    var list = $('list'); list.innerHTML = '';
+    var ids = visible();
+    $('count').textContent = ids.length + (ids.length === 1 ? ' item' : ' items');
+    ids.forEach(function(i){
+      var it = items[i];
+      var li = el('li', 'row' + (i === current ? ' playing' : ''));
+      var btn = el('button', 'play'); btn.type = 'button';
+      btn.setAttribute('aria-label', 'Play ' + (it.title || 'item'));
+      btn.innerHTML = icon(i === current && !audio.paused ? PAUSE : PLAY);
+      var meta = el('div', 'meta');
+      meta.appendChild(el('div', 'title', it.title || 'Untitled'));
+      if(it.artist) meta.appendChild(el('div', 'artist', it.artist));
+      li.appendChild(btn); li.appendChild(meta); li.appendChild(el('span', 'kind', it.type === 'video' ? 'Video' : 'Song'));
+      li.addEventListener('click', function(){ choose(i); });
+      list.appendChild(li);
+    });
+    var msg = $('msg'); msg.innerHTML = '';
+    if(!items.length){
+      var n = el('div', 'note');
+      n.innerHTML = '<strong>Nothing here yet.</strong> Add your first song or video to <code>content.json</code> and upload the file to the <code>media</code> folder. The README explains each step.';
+      msg.appendChild(n);
+    } else if(!ids.length){
+      msg.appendChild(el('div', 'note', 'No matches. Try a different word or switch to All.'));
+    }
+  }
+
+  function setToggle(){
+    var playing = !audio.paused;
+    $('toggleIcon').innerHTML = '<path d="' + (playing ? PAUSE : PLAY) + '"/>';
+    $('toggle').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  }
+
+  function closeStage(){
+    $('stage').hidden = true; $('stageBody').innerHTML = '';
+  }
+
+  function choose(i){
+    var it = items[i]; if(!it) return;
+    if(it.type === 'video'){
+      audio.pause(); setToggle();
+      current = i;
+      showVideo(it);
+      render();
+      return;
+    }
+    if(i === current && audio.src){ if(audio.paused) audio.play(); else audio.pause(); return; }
+    closeStage();
+    current = i;
+    audio.src = it.file;
+    $('player').hidden = false; $('page').classList.add('has-player');
+    $('nowTitle').textContent = it.title || 'Untitled';
+    $('nowArtist').textContent = it.artist ? ' · ' + it.artist : '';
+    var p = audio.play(); if(p && p.catch) p.catch(function(){ setToggle(); });
+    render();
+  }
+
+  function showVideo(it){
+    var body = $('stageBody'); body.innerHTML = '';
+    $('stageTitle').textContent = it.title || 'Video';
+    if(it.youtube){
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(it.youtube);
+      f.title = it.title || 'Video';
+      f.allow = 'accelerometer; encrypted-media; gyroscope; picture-in-picture';
+      f.allowFullscreen = true;
+      body.appendChild(f);
+    } else {
+      var v = document.createElement('video');
+      v.controls = true; v.playsInline = true; v.src = it.file;
+      body.appendChild(v);
+      var p = v.play(); if(p && p.catch) p.catch(function(){});
+    }
+    $('stage').hidden = false;
+    $('stage').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function step(dir){
+    var songs = visible().filter(function(i){ return items[i].type === 'song'; });
+    if(!songs.length) return;
+    var pos = songs.indexOf(current), next;
+    if(shuffle && songs.length > 1){
+      do { next = songs[Math.floor(Math.random() * songs.length)]; } while(next === current);
+    } else {
+      next = songs[(pos + dir + songs.length) % songs.length];
+      if(pos === -1) next = songs[dir > 0 ? 0 : songs.length - 1];
+    }
+    choose(next);
+  }
+
+  audio.addEventListener('play', function(){ setToggle(); render(); });
+  audio.addEventListener('pause', function(){ setToggle(); render(); });
+  audio.addEventListener('ended', function(){ step(1); });
+  audio.addEventListener('loadedmetadata', function(){ $('time').textContent = fmt(0) + ' / ' + fmt(audio.duration); });
+  audio.addEventListener('timeupdate', function(){
+    var d = audio.duration || 0;
+    $('seek').value = d ? (audio.currentTime / d) * 100 : 0;
+    $('time').textContent = fmt(audio.currentTime) + ' / ' + fmt(d);
+  });
+  audio.addEventListener('error', function(){
+    if(!audio.getAttribute('src')) return;
+    var m = $('msg'); m.innerHTML = '';
+    m.appendChild(el('div', 'note err', 'That file could not be played. Check that the path in content.json matches the file name exactly.'));
+  });
+  $('seek').addEventListener('input', function(e){ var d = audio.duration || 0; if(d) audio.currentTime = (e.target.value / 100) * d; });
+  $('toggle').addEventListener('click', function(){ if(!audio.src) return; if(audio.paused) audio.play(); else audio.pause(); });
+  $('next').addEventListener('click', function(){ step(1); });
+  $('prev').addEventListener('click', function(){ step(-1); });
+  $('shuf').addEventListener('click', function(){ shuffle = !shuffle; this.setAttribute('aria-pressed', shuffle ? 'true' : 'false'); });
+  $('stageClose').addEventListener('click', closeStage);
+  $('q').addEventListener('input', function(e){ query = e.target.value; render(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
+    b.addEventListener('click', function(){
+      filter = b.getAttribute('data-f');
+      Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      render();
+    });
+  });
+
+  fetch('content.json', {cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw new Error('missing'); return r.json(); })
+    .then(function(data){
+      items = (data.items || []).filter(function(it){ return it && (it.file || it.youtube); });
+      if(data.siteName){ $('siteName').textContent = data.siteName; document.title = data.siteName; }
+      if(data.tagline) $('tagline').textContent = data.tagline;
+      render();
+    })
+    .catch(function(){
+      render();
+      var m = $('msg'); m.innerHTML = '';
+      var n = el('div', 'note err');
+      n.innerHTML = '<strong>The library could not load.</strong> If you opened this page by double-clicking the file, publish it on GitHub Pages or run a local server, because browsers block <code>content.json</code> from a local file. Also check that <code>content.json</code> sits next to <code>index.html</code> and has no typos.';
+      m.appendChild(n);
+    });
+})();
+</script>
+
+</html>
